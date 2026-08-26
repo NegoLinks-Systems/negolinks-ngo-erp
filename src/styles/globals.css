@@ -1,0 +1,243 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================================
+   NegoLinks Enterprise Design System — NGO & Nonprofit Management ERP
+   Fixed brand constants + product accent: Humanity Violet (#7C3AED)
+   Dark is the default. The light theme re-maps surface tokens only; the
+   accent identity and the gold NegoLinks mark never change.
+   ========================================================================= */
+
+:root,
+.dark {
+  color-scheme: dark;
+
+  /* Fixed brand surfaces (dark base) */
+  --bg-primary: #080810;
+  --bg-surface: #0e0e1c;
+  --bg-card: #131325;
+  --bg-card-alt: #171730;
+  --bg-border: #1c1c34;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b8;
+  --text-muted: #5a5a78;
+  --overlay: rgba(4, 4, 10, 0.72);
+  --elevate: 0 8px 40px rgba(0, 0, 0, 0.5);
+
+  /* Product accent — Humanity Violet */
+  --accent-primary: #7c3aed;
+  --accent-light: #a78bfa;
+  --accent-deep: #6d28d9;
+  --accent-glow: rgba(124, 58, 237, 0.15);
+  --accent-border: rgba(124, 58, 237, 0.3);
+
+  /* NegoLinks gold — brand mark only, never re-coloured */
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+
+  /* Status */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+}
+
+.light {
+  color-scheme: light;
+
+  --bg-primary: #f5f5fa;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-alt: #f2f2f8;
+  --bg-border: #e2e2ee;
+  --text-primary: #12121f;
+  --text-secondary: #55556e;
+  --text-muted: #8a8aa3;
+  --overlay: rgba(20, 20, 35, 0.45);
+  --elevate: 0 8px 30px rgba(20, 20, 45, 0.1);
+
+  --accent-glow: rgba(124, 58, 237, 0.1);
+  --accent-border: rgba(124, 58, 237, 0.28);
+}
+
+* {
+  border-color: var(--bg-border);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: Inter, Poppins, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-border);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-border);
+}
+
+@layer components {
+  .nl-card {
+    @apply rounded-xl border bg-card;
+    border-color: var(--bg-border);
+    box-shadow: var(--elevate);
+  }
+
+  .nl-card-glass {
+    background: color-mix(in srgb, var(--bg-card) 90%, transparent);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--accent-border);
+    border-radius: 20px;
+  }
+
+  .nl-btn {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all;
+  }
+
+  .nl-btn-primary {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-deep));
+    color: #fff;
+  }
+  .nl-btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+  .nl-btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .nl-btn-ghost {
+    border: 1px solid var(--accent-border);
+    color: var(--accent-light);
+    background: transparent;
+  }
+  .nl-btn-ghost:hover {
+    background: var(--accent-glow);
+  }
+
+  .nl-btn-subtle {
+    border: 1px solid var(--bg-border);
+    color: var(--text-secondary);
+    background: var(--bg-card-alt);
+  }
+  .nl-btn-subtle:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-border);
+  }
+
+  .nl-btn-danger {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    color: #fff;
+  }
+
+  .nl-input {
+    @apply w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-all;
+    background: var(--bg-card-alt);
+    border: 1px solid var(--bg-border);
+    color: var(--text-primary);
+    min-height: 44px;
+  }
+  .nl-input::placeholder {
+    color: var(--text-muted);
+  }
+  .nl-input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .nl-input:disabled {
+    opacity: 0.6;
+  }
+
+  .nl-label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide;
+    color: var(--text-secondary);
+  }
+
+  .nl-accent-text {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-light));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .nl-gold-text {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .nl-chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold;
+  }
+
+  .nl-section-title {
+    @apply text-[10px] font-semibold uppercase tracking-[0.14em];
+    color: var(--text-muted);
+  }
+
+  .nl-skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--bg-card) 25%,
+      var(--bg-card-alt) 50%,
+      var(--bg-card) 75%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer rounded-md;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Recharts adapts to the active theme */
+.recharts-cartesian-grid line {
+  stroke: var(--bg-border);
+}
+.recharts-text {
+  fill: var(--text-muted);
+}
+
+/* Branded print output for documents and reports */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .print-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+}

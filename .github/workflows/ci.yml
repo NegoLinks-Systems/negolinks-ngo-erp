@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Types, lint and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit -p tsconfig.app.json
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and component tests
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  database:
+    name: Database migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ngotest
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Supabase stand-ins
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d ngotest -f docs/testing/mock_supabase_env.sql
+
+      - name: Install the schema
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d ngotest -v ON_ERROR_STOP=1 -f supabase/sql/01_INSTALL_ALL.sql
+
+      - name: Prove the installer is idempotent
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d ngotest -v ON_ERROR_STOP=1 -f supabase/sql/01_INSTALL_ALL.sql
+
+      - name: Prove tenant isolation and audit immutability
+        env:
+          PGPASSWORD: postgres
+        run: |
+          OUTPUT=$(psql -h localhost -U postgres -d ngotest -tA -f docs/testing/rls_isolation_test.sql)
+          echo "$OUTPUT"
+          echo "$OUTPUT" | grep -q "A_sees_beta_rows: 0"    || { echo "FAIL: cross-tenant read"; exit 1; }
+          echo "$OUTPUT" | grep -q "B_sees_alpha_rows: 0"   || { echo "FAIL: cross-tenant read"; exit 1; }
+          echo "$OUTPUT" | grep -q "A_audit_rows_updated: 0" || { echo "FAIL: audit log is mutable"; exit 1; }
+
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run the public journeys
+        run: npx playwright test src/e2e/public-site.spec.ts --project=desktop-chrome
+
+      - name: Upload the report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
