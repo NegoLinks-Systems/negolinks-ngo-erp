@@ -1,6 +1,6 @@
-import { useState, type FC, type FormEvent } from 'react'
+import { useEffect, useState, type FC, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck } from 'lucide-react'
+import { AlertCircle, Building2, UserRound, ArrowLeft, Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { BRAND, PRODUCT, env } from '@/constants'
 import { useAppStore } from '@/stores/app.store'
@@ -110,6 +110,7 @@ const HumanityHero: FC = () => (
 export const LoginPage: FC = () => {
   const session = useAppStore((state) => state.session)
   const signIn = useAppStore((state) => state.signIn)
+  const boot = useAppStore((state) => state.boot)
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -117,6 +118,27 @@ export const LoginPage: FC = () => {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [resetMode, setResetMode] = useState(false)
+
+  // First-run setup: shown only while the installation has no organization.
+  const [setupAvailable, setSetupAvailable] = useState(false)
+  const [setupMode, setSetupMode] = useState(false)
+  const [orgName, setOrgName] = useState('')
+  const [fullName, setFullName] = useState('')
+
+  useEffect(() => {
+    let active = true
+    void authService
+      .needsBootstrap()
+      .then((needed) => {
+        if (!active) return
+        setSetupAvailable(needed)
+        setSetupMode(needed)
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [])
 
   if (session) return <Navigate to="/app" replace />
 
@@ -140,6 +162,40 @@ export const LoginPage: FC = () => {
 
     if (!email.trim() || (!isEvaluationMode && !password)) {
       setError('Please enter your email address and password.')
+      return
+    }
+
+    if (setupMode) {
+      if (!orgName.trim()) {
+        setError('Please enter your organization name.')
+        return
+      }
+      if (password.length < 8) {
+        setError('Choose a password of at least 8 characters.')
+        return
+      }
+      setSubmitting(true)
+      try {
+        const { needsConfirmation } = await authService.signUp(email.trim(), password)
+        if (needsConfirmation) {
+          setError(
+            'Your account was created. Confirm your email address, then return here and sign in to finish setup.',
+          )
+          setSetupMode(false)
+          return
+        }
+        await authService.bootstrapFirstAdmin({
+          organizationName: orgName.trim(),
+          fullName: fullName.trim() || email.split('@')[0] || 'Administrator',
+        })
+        await boot()
+        toast.success(`${orgName.trim()} is ready. You are the Super Admin.`)
+        navigate('/app', { replace: true })
+      } catch (caught) {
+        setError((caught as Error).message)
+      } finally {
+        setSubmitting(false)
+      }
       return
     }
 
@@ -201,7 +257,56 @@ export const LoginPage: FC = () => {
               </div>
             ) : null}
 
+            {setupMode ? (
+              <div
+                className="mb-4 rounded-lg p-3 text-xs leading-relaxed"
+                style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.35)', color: '#C4B5FD' }}
+              >
+                <strong className="block text-white">First-time setup</strong>
+                No organization exists on this installation yet. The account you create here becomes the
+                Super Admin.
+              </div>
+            ) : null}
+
             <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
+              {setupMode ? (
+                <>
+                  <div>
+                    <label htmlFor="orgName" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: '#A0A0B8' }}>
+                      Organization name
+                    </label>
+                    <div className="relative">
+                      <Building2 size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#5A5A78' }} />
+                      <input
+                        id="orgName"
+                        className="w-full rounded-lg py-3 pl-9 pr-3 text-sm text-white outline-none transition-all"
+                        style={{ background: '#0E0E1C', border: '1px solid rgba(124,58,237,0.3)' }}
+                        placeholder="Hope Alliance Foundation"
+                        value={orgName}
+                        onChange={(event) => setOrgName(event.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="fullName" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: '#A0A0B8' }}>
+                      Your full name
+                    </label>
+                    <div className="relative">
+                      <UserRound size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#5A5A78' }} />
+                      <input
+                        id="fullName"
+                        className="w-full rounded-lg py-3 pl-9 pr-3 text-sm text-white outline-none transition-all"
+                        style={{ background: '#0E0E1C', border: '1px solid rgba(124,58,237,0.3)' }}
+                        placeholder="Nego Ojobo"
+                        value={fullName}
+                        onChange={(event) => setFullName(event.target.value)}
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : null}
+
               <div>
                 <label htmlFor="email" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: '#A0A0B8' }}>
                   Email address
@@ -274,7 +379,7 @@ export const LoginPage: FC = () => {
                 style={{ background: 'linear-gradient(135deg, #7C3AED, #6D28D9)' }}
               >
                 {submitting ? <Loader2 size={16} className="animate-spin" /> : null}
-                {resetMode ? 'Send reset link' : 'Sign In'}
+                {resetMode ? 'Send reset link' : setupMode ? 'Create organization' : 'Sign In'}
               </button>
             </form>
 
@@ -282,14 +387,33 @@ export const LoginPage: FC = () => {
               <button
                 type="button"
                 onClick={() => {
+                  if (setupMode) {
+                    setSetupMode(false)
+                    setError(null)
+                    return
+                  }
                   setResetMode((value) => !value)
                   setError(null)
                 }}
                 className="transition-colors hover:text-white"
                 style={{ color: '#A78BFA' }}
               >
-                {resetMode ? 'Back to sign in' : 'Forgot password?'}
+                {resetMode ? 'Back to sign in' : setupMode ? 'I already have an account' : 'Forgot password?'}
               </button>
+
+              {setupAvailable && !setupMode && !resetMode ? (
+                <button
+                  type="button"
+                  className="mt-2 w-full text-center text-xs font-semibold transition-colors"
+                  style={{ color: '#A78BFA' }}
+                  onClick={() => {
+                    setSetupMode(true)
+                    setError(null)
+                  }}
+                >
+                  Set up a new organization
+                </button>
+              ) : null}
               <span className="flex items-center gap-1" style={{ color: '#5A5A78' }}>
                 <ShieldCheck size={12} /> Secure Enterprise Login
               </span>

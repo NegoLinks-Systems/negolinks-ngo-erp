@@ -8,6 +8,7 @@ import {
   FileSearch,
   FolderKanban,
   HandCoins,
+  HandHeart,
   HeartHandshake,
   Landmark,
   MapPinned,
@@ -57,11 +58,14 @@ const Hero: FC = () => (
           organizations working from a single community to an entire continent.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link to="/login" className="nl-btn nl-btn-primary px-6">
-            Sign in to your workspace <ArrowRight size={16} />
+          <Link to="/donate" className="nl-btn nl-btn-primary px-6">
+            <HandHeart size={16} /> Donate now
           </Link>
           <Link to="/platform" className="nl-btn nl-btn-ghost px-6">
             Explore the platform
+          </Link>
+          <Link to="/login" className="nl-btn nl-btn-ghost px-6">
+            Sign in <ArrowRight size={16} />
           </Link>
         </div>
         <dl className="mt-12 grid grid-cols-2 gap-6 sm:grid-cols-4">
@@ -196,8 +200,8 @@ export const HomePage: FC = () => (
         Sign in to your workspace, or talk to our team about deploying the platform for your organization.
       </p>
       <div className="mt-7 flex flex-wrap justify-center gap-3">
-        <Link to="/login" className="nl-btn nl-btn-primary px-6">
-          Sign in <ArrowRight size={16} />
+        <Link to="/donate" className="nl-btn nl-btn-primary px-6">
+          <HandHeart size={16} /> Support our work
         </Link>
         <Link to="/contact" className="nl-btn nl-btn-ghost px-6">
           Contact us

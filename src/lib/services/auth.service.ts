@@ -1,6 +1,6 @@
 import { getSupabase, supabaseReady } from '@/lib/supabase'
 import { localAdapter } from '@/lib/localAdapter'
-import { newId, repository, setAuditContext } from '@/lib/repository'
+import { repository, setAuditContext } from '@/lib/repository'
 import type { Role } from '@/constants'
 import type { AppUser, Organization } from '@/types'
 
@@ -94,6 +94,69 @@ export const authService = {
     return profile
   },
 
+  /** True when this installation has no organization and needs first-time setup. */
+  async needsBootstrap(): Promise<boolean> {
+    const sb = getSupabase()
+    if (!sb) return false
+    const { data, error } = await sb.rpc('needs_bootstrap')
+    if (error) return false
+    return data === true
+  },
+
+  /** Creates the Supabase auth account used for first-time setup. */
+  async signUp(email: string, password: string): Promise<{ needsConfirmation: boolean }> {
+    const sb = getSupabase()
+    if (!sb) throw new Error('Creating an account requires a connected backend.')
+    const { data, error } = await sb.auth.signUp({ email, password })
+    if (error) throw new Error(mapAuthError(error.message))
+    // When email confirmation is switched on, Supabase returns a user with no session.
+    return { needsConfirmation: Boolean(data.user && !data.session) }
+  },
+
+  /**
+   * Completes first-time setup: creates the organization and makes the signed-in
+   * account its Super Admin. Refuses once an organization already exists.
+   */
+  async bootstrapFirstAdmin(input: {
+    organizationName: string
+    fullName: string
+    country?: string
+    currency?: string
+  }): Promise<SessionProfile> {
+    const sb = getSupabase()
+    if (!sb) throw new Error('First-time setup requires a connected backend.')
+
+    const { data: auth } = await sb.auth.getUser()
+    if (!auth?.user) throw new Error('Please sign in before completing setup.')
+
+    const { data, error } = await sb.rpc('bootstrap_first_admin', {
+      p_org_name: input.organizationName,
+      p_full_name: input.fullName,
+      p_email: auth.user.email ?? null,
+      p_country: input.country ?? 'Nigeria',
+      p_currency: input.currency ?? 'NGN',
+    })
+    if (error) throw new Error(error.message)
+
+    const created = (Array.isArray(data) ? data[0] : data) as AppUser | null
+    if (!created) throw new Error('Setup did not complete. Please try again.')
+
+    const profile: SessionProfile = {
+      userId: created.id,
+      authUserId: auth.user.id,
+      email: created.email,
+      fullName: created.full_name,
+      role: created.role,
+      jobTitle: created.job_title,
+      orgId: created.org_id,
+      branchId: null,
+      avatarUrl: null,
+      mfaEnabled: false,
+    }
+    applySession(profile)
+    return profile
+  },
+
   async signOut(): Promise<void> {
     const sb = getSupabase()
     if (sb) await sb.auth.signOut()
@@ -177,60 +240,31 @@ const loadProfile = async (authUserId: string, email: string): Promise<SessionPr
     }
   }
 
-  // No profile yet — bootstrap the installation's first organization and admin.
-  const { data: orgs } = await sb.from('organizations').select('id').is('deleted_at', null).limit(1)
-  let orgId = orgs?.[0]?.id as string | undefined
-  if (!orgId) {
-    const { data: created, error: orgError } = await sb
-      .from('organizations')
-      .insert({
-        id: newId(),
-        name: 'Your Organization',
-        legal_name: 'Your Organization',
-        org_type: 'NGO',
-        country: 'Nigeria',
-        base_currency: 'NGN',
-        locale: 'en-NG',
-        timezone: 'Africa/Lagos',
-        date_format: 'dd MMM yyyy',
-        financial_year_start: '01-01',
-      })
-      .select('id')
-      .single()
-    if (orgError) throw new Error(orgError.message)
-    orgId = created.id as string
+  // No profile yet. Either this account was invited by an administrator and is
+  // signing in for the first time, or it does not belong here at all. The
+  // claim_invitation function decides — it links a pending row that carries this
+  // verified email address, and does nothing otherwise.
+  const { data: claimed, error: claimError } = await sb.rpc('claim_invitation')
+  if (claimError) throw new Error(claimError.message)
+
+  const linked = (Array.isArray(claimed) ? claimed[0] : claimed) as AppUser | null
+  if (!linked) {
+    throw new Error(
+      'This account is not linked to an organization yet. Ask an administrator to invite you, or complete first-time setup if this is a new installation.',
+    )
   }
 
-  const { data: profileRow, error: profileError } = await sb
-    .from('app_users')
-    .insert({
-      id: newId(),
-      org_id: orgId,
-      auth_user_id: authUserId,
-      full_name: email.split('@')[0]?.replace(/[._-]/g, ' ') || 'Administrator',
-      email,
-      role: 'super_admin',
-      job_title: 'Executive Director',
-      is_active: true,
-      mfa_enabled: false,
-      last_login_at: new Date().toISOString(),
-    })
-    .select()
-    .single()
-  if (profileError) throw new Error(profileError.message)
-
-  const created = profileRow as AppUser
   return {
-    userId: created.id,
+    userId: linked.id,
     authUserId,
-    email: created.email,
-    fullName: created.full_name,
-    role: created.role,
-    jobTitle: created.job_title,
-    orgId: created.org_id,
-    branchId: null,
-    avatarUrl: null,
-    mfaEnabled: false,
+    email: linked.email || email,
+    fullName: linked.full_name,
+    role: linked.role,
+    jobTitle: linked.job_title,
+    orgId: linked.org_id,
+    branchId: linked.branch_id ?? null,
+    avatarUrl: linked.avatar_url,
+    mfaEnabled: linked.mfa_enabled,
   }
 }
 

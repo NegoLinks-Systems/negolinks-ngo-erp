@@ -4,9 +4,9 @@
  * Values here are brand-level and must not be made editable by customers.
  */
 
-export const APP_VERSION = '1.0.0'
-export const SCHEMA_VERSION = '012'
-export const RELEASE_DATE = '2026-08-11'
+export const APP_VERSION = '1.1.0'
+export const SCHEMA_VERSION = '013'
+export const RELEASE_DATE = '2026-08-27'
 export const ENTERPRISE_STANDARD = 'NegoLinks Enterprise Standard v1.0'
 
 export const BRAND = {

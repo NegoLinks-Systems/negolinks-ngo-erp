@@ -1,6 +1,6 @@
 import { useState, type FC, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { ArrowRight, Menu, Moon, Sun, X } from 'lucide-react'
+import { ArrowRight, HandHeart, Menu, Moon, Sun, X } from 'lucide-react'
 import { BRAND, PRODUCT, env } from '@/constants'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app.store'
@@ -10,6 +10,7 @@ const NAV = [
   { label: 'Platform', href: '/platform' },
   { label: 'Solutions', href: '/solutions' },
   { label: 'About', href: '/about' },
+  { label: 'Donate', href: '/donate' },
   { label: 'Contact', href: '/contact' },
 ]
 
@@ -61,7 +62,10 @@ export const PublicLayout: FC<{ children: ReactNode }> = ({ children }) => {
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <Link to={session ? '/app' : '/login'} className="nl-btn nl-btn-primary hidden sm:inline-flex">
+            <Link to="/donate" className="nl-btn nl-btn-primary hidden sm:inline-flex">
+              <HandHeart size={15} /> Donate
+            </Link>
+            <Link to={session ? '/app' : '/login'} className="nl-btn nl-btn-ghost hidden sm:inline-flex">
               {session ? 'Open Workspace' : 'Sign In'}
               <ArrowRight size={15} />
             </Link>
@@ -94,8 +98,11 @@ export const PublicLayout: FC<{ children: ReactNode }> = ({ children }) => {
                 {item.label}
               </NavLink>
             ))}
-            <div className="p-4">
-              <Link to={session ? '/app' : '/login'} className="nl-btn nl-btn-primary w-full" onClick={() => setMenuOpen(false)}>
+            <div className="space-y-2 p-4">
+              <Link to="/donate" className="nl-btn nl-btn-primary w-full" onClick={() => setMenuOpen(false)}>
+                <HandHeart size={15} /> Donate
+              </Link>
+              <Link to={session ? '/app' : '/login'} className="nl-btn nl-btn-ghost w-full" onClick={() => setMenuOpen(false)}>
                 {session ? 'Open Workspace' : 'Sign In'}
               </Link>
             </div>
@@ -124,6 +131,7 @@ export const PublicLayout: FC<{ children: ReactNode }> = ({ children }) => {
             <ul className="space-y-2 text-sm text-ink-2">
               <li><Link to="/platform" className="hover:text-accent-light">Capabilities</Link></li>
               <li><Link to="/solutions" className="hover:text-accent-light">Who it is for</Link></li>
+              <li><Link to="/donate" className="hover:text-accent-light">Donate</Link></li>
               <li><Link to="/verify" className="hover:text-accent-light">Verify a document</Link></li>
               <li><Link to="/login" className="hover:text-accent-light">Sign in</Link></li>
             </ul>

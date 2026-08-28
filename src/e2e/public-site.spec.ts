@@ -39,6 +39,29 @@ test.describe('public website', () => {
     await expect(page.getByText(/no matching document/i)).toBeVisible({ timeout: 10_000 })
   })
 
+  test('the donate page is reachable from the header and takes a pledge', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('link', { name: /donate/i }).first().click()
+    await expect(page).toHaveURL(/\/donate/)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+    // Amount presets and the custom amount field are both offered.
+    await expect(page.getByLabel(/or enter another amount/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: /pledge/i })).toBeVisible()
+  })
+
+  test('the donate form asks who the gift is from', async ({ page }) => {
+    await page.goto('/donate')
+    await page.getByRole('button', { name: /pledge/i }).click()
+    await expect(page.getByText(/who this gift is from|anonymously/i).first()).toBeVisible()
+  })
+
+  test('a visitor can choose to give anonymously', async ({ page }) => {
+    await page.goto('/donate')
+    await page.getByLabel(/give anonymously/i).check()
+    await expect(page.getByLabel(/your name/i)).toHaveCount(0)
+  })
+
   test('the footer credits the suite and links to negolinks.com', async ({ page }) => {
     await page.goto('/')
     const credit = page.getByRole('link', { name: /NegoLinks Enterprise Suite/i })

@@ -8,6 +8,8 @@ import SplashScreen from '@/pages/auth/SplashScreen'
 import LoginPage from '@/pages/auth/LoginPage'
 import { AboutPage as PublicAboutPage, ContactPage, HomePage, NotFoundPage, PlatformPage, SolutionsPage, VerifyPage } from '@/pages/public'
 
+const DonatePage = lazy(() => import('@/pages/public/DonatePage'))
+
 const ExecutiveDashboard = lazy(() => import('@/pages/dashboard/ExecutiveDashboard'))
 const GrantsPage = lazy(() => import('@/pages/grants/GrantsPage'))
 
@@ -199,6 +201,7 @@ export const App: FC = () => {
               <Route path="/solutions" element={<SolutionsPage />} />
               <Route path="/about" element={<PublicAboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route path="/donate" element={<DonatePage />} />
               <Route path="/verify" element={<VerifyPage />} />
               <Route path="/verify/:code" element={<VerifyPage />} />
               <Route path="/login" element={<LoginPage />} />

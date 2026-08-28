@@ -367,12 +367,44 @@ will fail until you do.
 
 ## 8. First run: create your organization
 
-1. Visit your deployment and choose **Sign In**, then **Create an account**.
-2. **The first account created becomes Super Admin automatically.** Make it yours.
-3. Go to **Settings → Organization** and enter your legal name, registration
-   number, address, base currency and financial year. These appear on every
-   generated document.
-4. Invite your team from **Settings → Users & Roles**.
+The application detects an empty installation and offers first-time setup in
+place of the usual password prompt.
+
+1. Visit your deployment and choose **Sign In**. Because no organization exists
+   yet, the screen shows **First-time setup** instead.
+2. Enter your organization name, your full name, your email address and a
+   password of at least eight characters.
+3. Choose **Create organization**.
+
+That account becomes **Super Admin**, the organization is created, and the
+nonprofit chart of accounts, feature flags and approval workflows are seeded
+automatically.
+
+**Setup closes behind you.** Once an organization exists the setup path refuses
+to run again, so nobody who later signs up can mint themselves an administrator
+account or attach themselves to your organization.
+
+> **If email confirmation is switched on** in your Supabase project
+> (Authentication → Providers → Email), you will be asked to confirm your address
+> first. Confirm it, return to the sign-in screen, sign in, and setup continues
+> from there. To skip this on a private deployment, turn off *Confirm email* in
+> that same panel before you begin.
+
+### Adding your team
+
+Because your colleagues need a Supabase auth account as well as an application
+profile, invitations work in two steps:
+
+1. In the app, go to **Settings → Users & Roles** and add the person with their
+   email address and the role they should hold. This creates their profile with
+   no account attached to it yet.
+2. Have them sign up, or invite them from the Supabase dashboard under
+   **Authentication → Users → Invite**.
+
+The first time they sign in, the application matches their verified email address
+to the profile you created and links the two. Nobody has to copy identifiers by
+hand, and an address you have not invited gets nowhere — it is told to contact an
+administrator.
 
 ### Roles
 
@@ -396,7 +428,23 @@ organization to an international NGO.
 Demo records are marked separately from real ones. Deleting demo data removes
 only records carrying that marker; anything your team has entered is untouched.
 
----
+### Accepting donations from your website
+
+The public site includes a **Donate** page at `/donate`, linked from the header,
+the footer and the home page. Visitors choose an amount, optionally pick a
+campaign, and submit their details.
+
+**Gifts arrive as pledges, never as recorded income.** They appear under
+**Fundraising → Donations & pledges** with a reference number, and a notification
+is raised for your team. Finance staff mark a pledge as received once the money
+actually arrives, so a public form can never inflate your reported income.
+
+Campaigns appear on the donate page only while their status is **Running**, so
+you control what visitors are asked to give towards.
+
+The form records the intention to give and shows your contact details for
+transfer; it does not take card payments. To add a payment gateway, extend the
+`record_public_donation` function and the `publicSite.service.ts` client.
 
 ## 9. Backup, recovery and upgrades
 

@@ -44,6 +44,12 @@ DROP FUNCTION IF EXISTS public.is_member_of(UUID) CASCADE;
 DROP FUNCTION IF EXISTS public.is_admin() CASCADE;
 DROP FUNCTION IF EXISTS public.is_manager() CASCADE;
 DROP FUNCTION IF EXISTS public.can_write() CASCADE;
+DROP FUNCTION IF EXISTS public.needs_bootstrap() CASCADE;
+DROP FUNCTION IF EXISTS public.bootstrap_first_admin(TEXT, TEXT, TEXT, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.claim_invitation() CASCADE;
+DROP FUNCTION IF EXISTS public.public_organization_profile() CASCADE;
+DROP FUNCTION IF EXISTS public.public_active_campaigns() CASCADE;
+DROP FUNCTION IF EXISTS public.record_public_donation(TEXT, BIGINT, TEXT, TEXT, UUID, TEXT, TEXT, BOOLEAN, TEXT) CASCADE;
 
 -- Confirmation.
 DO $$

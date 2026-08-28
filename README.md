@@ -31,7 +31,8 @@ activities, milestones, teams and risk registers.
 
 **Funding** — A nine-stage grant pipeline from opportunity to closeout, with
 disbursement tranches, a donor reporting calendar and compliance tracking.
-Donors, campaigns, donations and pledges.
+Donors, campaigns, donations and pledges, plus a public **Donate** page so
+supporters can give straight from your website.
 
 **People served** — Beneficiary registration with privacy controls and
 one-click anonymization, households, enrolment, service delivery records and
